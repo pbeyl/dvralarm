@@ -1,0 +1,23 @@
+dvralarm installation
+---------------------
+ffmpeg and local SMTP server is currently a pre-requisite and must be installed for dvralarm to function
+
+To install dvralarm run the following commands
+-----------------------------------------------
+
+$ make
+$ sudo make install
+
+ensure that the script is properly configured before starting the daemon. In particular ensure the 
+zmodopipe configuration with IP, username, password and SMTP variables is properly setup. The installation process will now run an initial configuration wizard. Thereafter configuration can be changed directly in the config file using
+$ sudo vim /etc/dvralarm/config.json
+
+once installed, dvralarm will be run as a system service and can be controlled with
+$ sudo /etc/init.d/dvralarm.sh start|stop|status
+
+in daemon mode dvralarm will output log data to the logfile by default located at /var/log/dvralarm.log
+
+to trigger an alarm event GPIO PIN 23 (Header PIN 16) must be connected to pull up resistor en triggered 
+on falling edge by bridging to Ground ie. Header PIN 14
+
+Reference the development board schematic included in this package for a GPIO wiring example with pull-up resistors. 
