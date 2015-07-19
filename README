@@ -1,23 +1,61 @@
-dvralarm installation
----------------------
-ffmpeg and local SMTP server is currently a pre-requisite and must be installed for dvralarm to function
 
-To install dvralarm run the following commands
------------------------------------------------
+Overview
+---------
+dvralarm is a Raspberry Pi project to send an email alert with the CCTV footage recorded a few seconds prior to an alarm triggered to the Raspberry Pi GPIO. The goal is to enable the recipient to easily and quickly determine the cause of the sounding alarm, and is designed to integrate a common CCTV DVR systems with an Alarm system. 
 
+
+Pre-Requisites
+---------------
+# ffmpeg: Used to transcode h264 stream into mp4 file
+# Exim: Local SMTP server to relay notification emails using SMTP
+# Alarm with Programmable output: This can be any device capable of triggering the Raspberry Pi GPIO, a breadboard with a pushbutton can be used in the development environment.
+# zmodopipe compatible DVR: zmodopipe is currently used to stream video footage over ip. More detail can be found on the following links. 
+https://plus.google.com/107530140244685710056/about
+http://www.zoneminder.com/forums/viewtopic.php?f=9&t=18137 
+I have included a modified version which will compile on the Raspberry Pi, also added support for two additional DVR models.
+
+zmodopipe support the following DVR models, the list below should also be used to reference the DVR model during configuration.
+    		1 - Use mobile port (safest, default)
+    		2 - Use media port (Works for some models, ie. Zmodo 9104)
+    		3 - Use media port w/header (Other models, please test)
+    		4 - Use QT5 family (ie. QT504, QT528)
+    		5 - Zmodo DVR-8104UV compatible (also DVR-8114HV)
+    		6 - CnM Classic 4 Cam DVR
+    		7 - Visionari 4/8 Channel DVR
+    		8 - Swann DM-70D and compatible
+    		9 - Swann DVR8-4000 and compatible
+    		10 - mEye compatible
+
+
+Installation
+-------------
+
+Download using wget or curl from Raspberry Pi cli and extract dvralarm source code to a temporary directory. 
+
+$ wget https://github.com/pbeyl/dvralarm/archive/master.tar.gz
+$ tar zxvf dvralarm-master.tar.gz
+
+To install dvralarm run the following commands from directory where the source has been extracted to.
+
+$ cd dvralarm
 $ make
 $ sudo make install
 
-ensure that the script is properly configured before starting the daemon. In particular ensure the 
-zmodopipe configuration with IP, username, password and SMTP variables is properly setup. The installation process will now run an initial configuration wizard. Thereafter configuration can be changed directly in the config file using
+ensure that the script is properly configured before starting the daemon. In particular ensure the zmodopipe configuration with DVR IP, username, password, DVR Model[1-10] and SMTP variables is properly setup. The installation process will run an initial configuration wizard. Thereafter configuration can be changed directly in the config file using
 $ sudo vim /etc/dvralarm/config.json
 
-once installed, dvralarm will be run as a system service and can be controlled with
+Once installed, dvralarm will be run as a system service and can be controlled using
 $ sudo /etc/init.d/dvralarm.sh start|stop|status
 
 in daemon mode dvralarm will output log data to the logfile by default located at /var/log/dvralarm.log
 
-to trigger an alarm event GPIO PIN 23 (Header PIN 16) must be connected to pull up resistor en triggered 
-on falling edge by bridging to Ground ie. Header PIN 14
+to trigger an alarm event GPIO PIN 23 (Header PIN 16) must be connected to pull up resistor and triggered on falling edge by bridging to Ground ie. Header PIN 14
 
 Reference the development board schematic included in this package for a GPIO wiring example with pull-up resistors. 
+
+Uninstall
+----------
+
+To uninstall dvralarm simply run the following command from the root of the extracted source code.
+
+$ sudo make uninstall
