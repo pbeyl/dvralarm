@@ -142,11 +142,16 @@ def send_mail(send_from, send_to, subject, text, files, server):
     msg.attach(MIMEText(text))
 
     for f in files:
-        part = MIMEBase('application', "octet-stream")
-        part.set_payload( open(f,"rb").read() )
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment; filename="{0}"'.format(os.path.basename(f)))
-        msg.attach(part)
+        
+        try:
+            part = MIMEBase('application', "octet-stream")
+            part.set_payload( open(f,"rb").read() )
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', 'attachment; filename="{0}"'.format(os.path.basename(f)))
+            msg.attach(part)
+        except Exception:
+            msg.attach(MIMEText('\nFailed to attach %s, skipping' % f))
+            logger.warning('failed to attach %s, skipping' % f, exc_info=True)
         
         '''
         with open(f, "rb") as fil:
@@ -416,7 +421,7 @@ def transcodeVid(inputf):
     
         if not is_locked(fi):
             logger.debug('deleting temp file %s' % fi)
-            os.remove(fi)
+            if LEVEL != logging.DEBUG: os.remove(fi)
     
     send_mail(CONFIG['MAIL_FROM'], CONFIG['MAIL_TO'], 'DVR Alarm %s' \
         % time.strftime("%Y-%m-%d_%H-%M-%S"), CONFIG['MAIL_BODY'], dst, CONFIG['MAIL_SERVER'])
