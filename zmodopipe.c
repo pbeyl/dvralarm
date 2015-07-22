@@ -154,11 +154,10 @@ struct SwannDVR8
 // Structure for logging into mEye compatible
 struct mEye
 {
-	char valc[20];		// 20 bytes, special values
-	char user[32];		//  32 username field
-	char pass[20];		//  32 password field
-	char channel[4];	// channel number
-};	// Total size:		  76 bytes
+	char valc[18];		// 18 bytes, special values
+	char user[20];		//  20 username field
+	char pass[20];		//  20 password field
+};	// Total size:		  58 bytes
 
 #define MAX_CHANNELS 16		// maximum channels to support (I've only seen max of 16).
 
@@ -1372,30 +1371,94 @@ int ConnectMEYE(int sockFd, int channel)
 	int retval;
 	static bool beenHere = false;
 	memset(&loginBuf, 0, sizeof(loginBuf));
+	char initBuf[43] = {0};
+	char configBuf[18] = {0};
+	char channelBuf[26] = {0};
+	char recvBuf[1024];
+
+    // Setup the init buffer
+    strcpy(initBuf, "GET /bubble/live?ch=0&stream=0 HTTP/1.1");
+    initBuf[39] = 0x0d;
+	initBuf[40] = 0x0a;
+	initBuf[41] = 0x0d;
+	initBuf[42] = 0x0a;
+	    //total length 43 bytes
 
 	// Setup login buffer
-	loginBuf.valc[3] = 0x48;
-	loginBuf.valc[8] = 0x28;
-	loginBuf.valc[10] = 0x04;
-	loginBuf.valc[12] = 0x05;
-	loginBuf.valc[16] = 0x29;
-	loginBuf.valc[18] = 0x38;	
+	loginBuf.valc[0] = 0xaa;
+	loginBuf.valc[4] = 0x35;
+	loginBuf.valc[13] = 0x2c;	
 
 	strcpy(loginBuf.user, globalArgs.username);
 	strcpy(loginBuf.pass, globalArgs.password);
-	*(short*)&loginBuf.channel[0] = htons(channel);     //channel number
+	//*(short*)&loginBuf.channel[0] = htons(channel);     //channel number
+	
+	// Now setup configBuf
+	memset(configBuf, 0, 18);
+
+	// setup streaming
+	configBuf[0] = 0xaa;
+	configBuf[4] = 0x0d;
+	configBuf[13] = 0x04;
+	configBuf[14] = 0x01;
+	    //total length 18 bytes
+	
+	
+	// Now setup channelBuf
+	memset(channelBuf, 0, 26);
+
+	// select channel to stream
+	channelBuf[0] = 0xaa;
+	channelBuf[4] = 0x15;
+	channelBuf[5] = 0x0a;
+	*(short*)&channelBuf[9] = htons(channel);     //channel number	
+	channelBuf[14] = 0x01;                         // Quality? 0=High, 1=Low
+	channelBuf[18] = 0x01;
+		//total length 26 bytes
 	
 
 	if( globalArgs.verbose && beenHere == false )
 	{
+		printBuffer((char*)&initBuf, sizeof(initBuf));
 		printBuffer((char*)&loginBuf, sizeof(loginBuf));
+		printBuffer((char*)&configBuf, sizeof(configBuf));
+		printBuffer((char*)&channelBuf, sizeof(channelBuf));
 		beenHere = true;
 	}
-
-	retval = send(sockFd, (char*)(&loginBuf), sizeof(loginBuf), 0);
 	
-	// Verify send was successful, all 76 bytes
-	if( retval != 76 )
+	// send init packet
+	retval = send(sockFd, (char*)(&initBuf), sizeof(initBuf), 0);
+	printMessage(true, "Ch %i: Send Init result: %i\n", channel+1, retval);
+	
+	retval = recv(sockFd, recvBuf, sizeof(recvBuf), 0);  // expect 1024 byte response after login request
+	
+	//printBuffer((char*)&recvBuf, 32);
+	printMessage(true, "Received Init Result(expect 1024): %i\n", retval);
+	
+	// send login packet
+	retval = send(sockFd, (char*)(&loginBuf), sizeof(loginBuf), 0);
+	printMessage(true, "Ch %i: Send Login result: %i\n", channel+1, retval);
+	
+	retval = recv(sockFd, recvBuf, 54, 0);  // expect 54 byte response after login request
+	
+	//printBuffer((char*)&recvBuf, 32);
+	printMessage(true, "Received Login Result(expect 54): %i\n", retval);
+	
+	// send configure packet
+	retval = send(sockFd, (char*)(&configBuf), sizeof(configBuf), 0);
+	printMessage(true, "Ch %i: Send config result: %i\n", channel+1, retval);
+	
+	retval = recv(sockFd, recvBuf, 22, 0);  // expect 22 byte response after config request
+	
+	//printBuffer((char*)&recvBuf, 32);
+	printMessage(true, "Received Login Result(expect 22): %i\n", retval);
+	
+	// Send packet to open channel
+	retval = send(sockFd, channelBuf, sizeof(channelBuf), 0);
+	
+	
+	// Verify send was successful, all 26 bytes
+	if( retval != 26 )
 	{
 		printMessage(true, "Ch %i: Could not open channel, Streaming failed.\n", channel+1);
 		return 1;
