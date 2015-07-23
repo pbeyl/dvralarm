@@ -761,7 +761,7 @@ if __name__ == '__main__':      ## main function of the application
     logger.setLevel(LEVEL)
 
     # create a file handler
-    ensure_dir(LOGFILE)
+    ensure_dir(os.path.dirname(LOGFILE))
     handler = logging.FileHandler(LOGFILE)
     handler.setLevel(LEVEL)
 
