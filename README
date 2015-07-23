@@ -35,7 +35,10 @@ Download using wget or curl from Raspberry Pi cli and extract dvralarm source co
 $ wget https://github.com/pbeyl/dvralarm/archive/master.tar.gz
 $ tar zxvf dvralarm-master.tar.gz
 
-To install dvralarm run the following commands from directory where the source has been extracted to.
+Alternatively use git to download source
+$ git clone https://github.com/pbeyl/dvralarm
+
+To install dvralarm run the following commands from directory where the source has been copied/extracted to.
 
 $ cd dvralarm
 $ make

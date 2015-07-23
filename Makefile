@@ -18,7 +18,6 @@ install:
 	chmod 755 /usr/bin/zmodopipe
 	update-rc.d dvralarm.sh defaults
 	/usr/local/bin/dvralarm_pi.py -i
-	/etc/init.d/dvralarm.sh start
 	@echo "\n## Install completed\nManage dvralarm service"
 	@echo "sudo /etc/init.d/dvralarm.sh start|stop|status"
 	@echo "\nTo uninstall run the following command"
